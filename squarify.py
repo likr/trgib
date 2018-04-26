@@ -148,7 +148,7 @@ def generate_tree(boxes_groups, parent_kid=0):
     if len(remaining) == 0:
         if len(children) == 1:
             return children[0]
-        return children[0]
+        return children
 
     return children + [generate_tree(remaining)]
 
