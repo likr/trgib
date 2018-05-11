@@ -34,7 +34,7 @@ $ python generate_scale_free_graph.py -n 100 -o graph.json
 ### Random Graph
 
 ```shell-session
-$ python generate_random_graph.py -m 15 -pgroup 0.2 -pout 0.05 -o graph.json
+$ python generate_random_graph.py -m 15 --pgroup 0.2 --pout 0.05 -o graph.json
 ```
 
 ## Layout calculation
