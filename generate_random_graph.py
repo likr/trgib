@@ -24,10 +24,10 @@ def make_graph(m, pgroup, pout, pin=0.2, pbridge=0.05, nmin=10, nmax=30):
     for u, v in itertools.combinations(nodes, 2):
         ugroup = graph.node[u]['group']
         vgroup = graph.node[v]['group']
-        if ugroup != vgroup and random.random() < pgroup:
+        if ugroup != vgroup and random.random() < pout:
             graph.add_edge(u, v)
     for g1, g2 in itertools.combinations(list(range(m)), 2):
-        if random.random() < pout:
+        if random.random() < pgroup:
             g1nodes = [x for x in nodes if graph.node[x]['group'] == g1]
             g2nodes = [x for x in nodes if graph.node[x]['group'] == g2]
             for u, v in itertools.product(g1nodes, g2nodes):
