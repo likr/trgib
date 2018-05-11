@@ -28,7 +28,7 @@ $ brew install cbc
 ### Scale-free network
 
 ```shell-session
-$ python generate_scale_free_network.py -n 100 -o graph.json
+$ python generate_scale_free_graph.py -n 100 -o graph.json
 ```
 
 ### Random Graph
