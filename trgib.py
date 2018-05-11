@@ -62,9 +62,12 @@ def main():
     parser.add_argument('--height', dest='height', type=int, default=600)
     parser.add_argument('-f', dest='infile', required=True)
     parser.add_argument('-o', dest='outfile', required=True)
+    parser.add_argument('--group-key', dest='group_key', default='group')
     args = parser.parse_args()
 
     graph = json.load(open(args.infile))
+    for node in graph['nodes']:
+        node['group'] = node[args.group_key]
     run(graph, args.width, args.height, args.outfile)
 
 
