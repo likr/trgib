@@ -13,13 +13,13 @@ def normalize_sizes(sizes, dx, dy):
     return list(sizes)
 
 
-def pad_rectangle(rect):
-    if rect['dx'] > 2:
-        rect['x'] += 1
-        rect['dx'] -= 2
-    if rect['dy'] > 2:
-        rect['y'] += 1
-        rect['dy'] -= 2
+def pad_rectangle(rect, margin=1):
+    if rect['dx'] > margin * 2:
+        rect['x'] += margin
+        rect['dx'] -= margin * 2
+    if rect['dy'] > margin * 2:
+        rect['y'] += margin
+        rect['dy'] -= margin * 2
 
 
 def layoutrow(sizes, x, y, dx, dy):
@@ -155,6 +155,10 @@ def generate_tree(boxes_groups, parent_kid=0):
 
 def squarify_tree_structure(sizes, x, y, dx, dy):
     boxes = squarify(sizes, x, y, dx, dy)
+    return tree_structure(boxes)
+
+
+def tree_structure(boxes):
     for i, box in enumerate(boxes):
         box["box_id"] = i
     boxes_groups = []
