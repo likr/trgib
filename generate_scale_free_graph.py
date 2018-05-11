@@ -6,10 +6,12 @@ import community
 
 
 def make_graph(n):
-    graph = nx.scale_free_graph(n).to_undirected()
+    graph = nx.Graph(nx.scale_free_graph(n))
     partition = community.best_partition(graph)
     for u in graph.nodes():
         graph.node[u]['group'] = partition[u]
+    for u, v in graph.edges():
+        graph.edges[u, v]['value'] = 1
     return graph
 
 
@@ -20,7 +22,11 @@ def main():
     args = parser.parse_args()
 
     graph = make_graph(args.n)
-    json.dump(json_graph.node_link_data(graph), open(args.outfile, 'w'))
+    m = len({graph.node[u]['group'] for u in graph.nodes()})
+    data = json_graph.node_link_data(graph)
+    data['groups'] = [{'id': i, 'parent': m} for i in range(m)]
+    data['groups'].append({'id': m, 'parent': None})
+    json.dump(data, open(args.outfile, 'w'))
 
 
 if __name__ == '__main__':

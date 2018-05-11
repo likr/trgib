@@ -2,56 +2,62 @@ import json
 import argparse
 from networkx.readwrite import json_graph
 from pyomo.opt import SolverFactory
-from squarify import squarify, normalize_sizes, squarify_tree_structure
+from nested_squarify import nested_squarify, nested_tree_structure
+from nested_squarify import nest, aggregate_sizes
 from define_model import Kx, K_group
 from define_model import define_model, get_x_coord, get_y_coord
 
 
 def run(graph_data, width, height, outfile):
     graph = json_graph.node_link_graph(graph_data)
-    groups = {graph.node[u]['group'] for u in graph.nodes()}
-    sizes = [(len([u for u in graph.nodes()
-                   if graph.node[u]['group'] == group]), group)
-             for group in groups]
-    sizes.sort(reverse=True)
-    values = normalize_sizes([v for v, _ in sizes], width, height)
-    tree = squarify_tree_structure(values, 0, 0, width, height)
+
+    groups = graph_data['groups']
+    sizes = [0 for _ in groups]
+    for node in graph_data['nodes']:
+        sizes[node['group']] += 1
+
+    children = nest([g['parent'] for g in groups])
+    aggregate_sizes(groups, sizes, children, set())
+    for i, g in enumerate(groups):
+        children[i].sort(key=lambda k: sizes[k], reverse=True)
+
+    boxes = nested_squarify(sizes, children, 0, 0, width, height)
+    tree = nested_tree_structure(boxes, children)
     K = K_group([Kx(
                     kid=i,
                     parent=obj['parent'],
                     vertical=obj['vertical'],
                     width=obj['dx'],
                     height=obj['dy'],
-                    group=sizes[obj['box_id']][1] if 'box_id' in obj else None,
+                    group=obj['box_id'] if 'box_id' in obj else None,
                     ) for i, obj in enumerate(tree)])
 
-    base_tree = squarify(values, 0, 0, width, height)
-    for i, t in enumerate(base_tree):
-        t['id'] = sizes[i][1]
-
     model = define_model(graph, K)
-    solver = SolverFactory("cbc")
+    solver = SolverFactory('cbc')
     result = solver.solve(model, tee=True, timelimit=300)
-    opt_tree = [{
-                    'id': K[j].group,
-                    'x': get_x_coord(K, model, j),
-                    'y': get_y_coord(K, model, j),
-                    'dx': K[j].width,
-                    'dy': K[j].height,
-                }
-                for j in K.get_id_has_no_children()]
-    opt_tree.sort(key=lambda o: o['id'])
 
-    opt_tree.append({
-        'id': len(opt_tree),
-        'x': 0,
-        'y': 0,
-        'dx': width,
-        'dy': height,
-    })
-    graph_data['groups'] = opt_tree
-    for link in graph_data['links']:
-        link['value'] = 1
+    for k in K:
+        j = k.kid
+        g = k.group
+        if g is not None:
+            groups[g]['x'] = get_x_coord(K, model, j)
+            groups[g]['y'] = get_y_coord(K, model, j)
+            groups[g]['dx'] = k.width
+            groups[g]['dy'] = k.height
+
+    root = [(g, i) for i, g in enumerate(groups) if g['parent'] is None][0][1]
+    groups[root]['x'] = 0
+    groups[root]['y'] = 0
+    groups[root]['dx'] = width
+    groups[root]['dy'] = height
+
+    margin = 5
+    for group, box in zip(groups, boxes):
+        group['x'] += margin * box['level']
+        group['y'] += margin * box['level']
+        group['dx'] -= 2 * margin * box['level']
+        group['dy'] -= 2 * margin * box['level']
+
     json.dump(graph_data, open(outfile, 'w'))
     print('computation time: {}'.format(result.solver.time))
 

@@ -158,7 +158,7 @@ def squarify_tree_structure(sizes, x, y, dx, dy):
     return tree_structure(boxes)
 
 
-def tree_structure(boxes):
+def tree_structure(boxes, offset=0):
     for i, box in enumerate(boxes):
         box["box_id"] = i
     boxes_groups = []
@@ -174,11 +174,12 @@ def tree_structure(boxes):
     boxes_groups.append(stash)
 
     generated_tree = generate_tree(boxes_groups)
+    directions = [False, True] if boxes[0]['vertical'] else [True, False]
 
     def tree2k(tree_structure, depth):
         if isinstance(tree_structure, list):
             children = [tree2k(sub, depth + 1) for sub in tree_structure]
-            vertical = depth % 2 == 0
+            vertical = directions[depth % 2]
             x = min(subbox['x'] for subbox in children)
             y = min(subbox['y'] for subbox in children)
             if vertical:
@@ -209,7 +210,8 @@ def tree_structure(boxes):
         del tree['cb_count']
         return [tree]
 
-    Ks = format_tree(tree2k(generated_tree, 0), -1, itertools.count())
+    Ks = format_tree(tree2k(generated_tree, 0),
+                     offset - 1, itertools.count(offset))
     Ks[0]['parent'] = None
     return Ks
 
